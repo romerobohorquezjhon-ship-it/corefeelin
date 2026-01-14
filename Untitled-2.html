@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><title>Workstation - Operador</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #2c3e50; color: white; }
+        .sidebar { width: 250px; background: #1a252f; padding: 20px; display: flex; flex-direction: column; }
+        .main { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
+        .earnings-card { background: #27ae60; padding: 15px; border-radius: 8px; font-size: 24px; text-align: center; margin-bottom: 20px; }
+        .inbox { background: white; color: black; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; }
+        #chat-stream { flex-grow: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #eee; }
+        .input-area { padding: 20px; display: flex; gap: 10px; }
+        input { flex-grow: 1; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+        button { background: #2980b9; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Call Center</h2>
+        <input type="text" id="op-name" placeholder="Tu Nombre Artístico" style="margin-bottom:10px;">
+        <button onclick="registerOp()" style="background:#27ae60">Activarme</button>
+        <hr style="width:100%; margin: 20px 0;">
+        <p>Estado: 🟢 En línea</p>
+    </div>
+
+    <div class="main">
+        <div class="earnings-card">💰 Ganancias Hoy: $<span id="op-balance">0.00</span></div>
+        <div class="inbox">
+            <div id="chat-stream"></div>
+            <div class="input-area">
+                <input type="text" id="op-input" placeholder="Responder al cliente...">
+                <button onclick="responder()">Enviar ($0.50)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let me = { name: "", balance: 0.00 };
+
+        function registerOp() {
+            me.name = document.getElementById('op-name').value;
+            let all = JSON.parse(localStorage.getItem('global_operators') || '[]');
+            if(!all.find(o => o.name === me.name)) {
+                all.push({ name: me.name, balance: 0.00 });
+                localStorage.setItem('global_operators', JSON.stringify(all));
+                alert("Operador activado en el sistema");
+            }
+        }
+
+        function responder() {
+            let txt = document.getElementById('op-input').value;
+            if(!txt) return;
+
+            let msgs = JSON.parse(localStorage.getItem('chat_history') || '[]');
+            msgs.push({ from: me.name, to: 'Cliente_Anonimo', text: txt, time: new Date() });
+            localStorage.setItem('chat_history', JSON.stringify(msgs));
+
+            me.balance += 0.50;
+            document.getElementById('op-balance').innerText = me.balance.toFixed(2);
+            document.getElementById('op-input').value = '';
+            
+            // Sync with Admin
+            let all = JSON.parse(localStorage.getItem('global_operators') || '[]');
+            let idx = all.findIndex(o => o.name === me.name);
+            all[idx].balance = me.balance;
+            localStorage.setItem('global_operators', JSON.stringify(all));
+            
+            updateChat();
+        }
+
+        function updateChat() {
+            let msgs = JSON.parse(localStorage.getItem('chat_history') || '[]');
+            document.getElementById('chat-stream').innerHTML = msgs.map(m => `
+                <div style="margin-bottom:10px; text-align: ${m.from === me.name ? 'right' : 'left'}">
+                    <small>${m.from}</small><br>
+                    <span style="background:#eee; padding:5px 10px; border-radius:10px; display:inline-block;">${m.text}</span>
+                </div>
+            `).join('');
+        }
+
+        window.addEventListener('storage', (e) => { if(e.key === 'chat_history') updateChat(); });
+        updateChat();
+    </script>
+</body>
+</html>

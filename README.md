@@ -1,1 +1,2 @@
-<a href="https://github.com/romerobohorquezjhon-ship-it/corefeelin">View on GitHub</a>
+## View the Page
+👉 [Click here to view the live page](https:santiagoarboleda.com)>
